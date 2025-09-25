@@ -12,8 +12,7 @@ HELP_TXT = """**🌟 Help Menu**
 • `/cancel` - Cancel ongoing tasks
 • `/security` - Check your security status
 • `/force_logout` - Emergency logout for security
-• `/channel_stats` - Show channel usage statistics
-• `/setup_channel` - Guide for setting up log channel
+• Content is delivered directly to your chat
 
 **📱 Usage:**
 

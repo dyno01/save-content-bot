@@ -100,6 +100,35 @@ async def send_cancel(client: Client, message: Message):
         text="**Batch Successfully Cancelled.**"
     )
 
+# debug command
+@Client.on_message(filters.command(["debug"]))
+async def debug_command(client: Client, message: Message):
+    """Debug information for troubleshooting"""
+    user_id = message.from_user.id
+    
+    debug_info = f"""🔍 **Debug Information**
+
+**Configuration:**
+• Parallel Processing: {PARALLEL_PROCESSING}
+• Content Delivery: Direct to User Chat
+• Max Concurrent Downloads: {MAX_CONCURRENT_DOWNLOADS}
+• Max Concurrent Uploads: {MAX_CONCURRENT_UPLOADS}
+
+**Session Status:**
+• User ID: {user_id}
+• Session Valid: {'✅' if await security_manager.is_session_valid(user_id) else '❌'}
+
+**Active Tasks:**
+• Parallel Tasks: {len(parallel_processor.active_tasks.get(user_id, []))}
+
+**Environment:**
+• Python Version: {sys.version.split()[0]}"""
+    
+    await client.send_message(
+        chat_id=message.chat.id, 
+        text=debug_info
+    )
+
 @Client.on_message(filters.text & filters.private)
 async def save(client: Client, message: Message):
     user_id = message.from_user.id
@@ -191,17 +220,23 @@ async def save(client: Client, message: Message):
         # Send processing start message
         processing_msg = await message.reply(f"**🚀 Processing {toID - fromID + 1} messages...**\n"
                                            f"**Mode:** {'Parallel' if PARALLEL_PROCESSING else 'Sequential'}\n"
-                                           f"**Target:** {'Log Channel' if LOG_CHANNEL else 'Your Chat'}")
+                                           f"**Target:** Your Chat")
         
         try:
             # Use parallel processing if enabled
+            print(f"DEBUG: Starting batch processing - From: {fromID}, To: {toID}, Chat: {chat_id}")
+            print(f"DEBUG: Parallel processing enabled: {PARALLEL_PROCESSING}")
+            print(f"DEBUG: Sending content directly to user chat")
+            
             if PARALLEL_PROCESSING:
                 results = await parallel_processor.process_batch_parallel(
-                    client, acc, message, fromID, toID, chat_type, chat_id
+                    client, acc, message, fromID, toID, chat_type, chat_id, processing_msg
                 )
             else:
                 # Fallback to sequential processing
                 results = await process_sequential(client, acc, message, fromID, toID, chat_type, chat_id)
+            
+            print(f"DEBUG: Processing completed - Success: {results['success']}, Failed: {results['failed']}")
             
             # Send completion message
             completion_text = f"""
@@ -214,12 +249,16 @@ async def save(client: Client, message: Message):
 • **Duration:** {results['duration']:.2f} seconds
 • **Speed:** {results['total']/results['duration']:.2f} messages/sec
 
-**🎯 Target:** {'Log Channel' if LOG_CHANNEL else 'Your Chat'}
+**🎯 Target:** Your Chat
 **⚡ Mode:** {'Parallel Processing' if PARALLEL_PROCESSING else 'Sequential Processing'}
 """
             
             if results['errors']:
-                completion_text += f"\n**⚠️ Errors:** {len(results['errors'])}"
+                completion_text += f"\n\n**❌ Error Details:**\n"
+                for i, error in enumerate(results['errors'][:3]):  # Show first 3 errors with full details
+                    completion_text += f"• **Error {i+1}:** {error}\n"
+                if len(results['errors']) > 3:
+                    completion_text += f"• ... and {len(results['errors']) - 3} more errors"
             
             await processing_msg.edit_text(completion_text)
             

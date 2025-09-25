@@ -25,9 +25,7 @@ DB_NAME = os.environ.get("DB_NAME", "vjsavecontentbot")
 # If You Want Error Message In Your Personal Message Then Turn It True Else If You Don't Want Then Flase
 ERROR_MESSAGE = os.environ.get('ERROR_MESSAGE', 'True').lower() in ('true', '1', 'yes', 'on')
 
-# Custom Log Channel Configuration
-LOG_CHANNEL = os.environ.get("LOG_CHANNEL", "")  # Channel ID or username for content delivery
-LOG_CHANNEL_USERNAME = os.environ.get("LOG_CHANNEL_USERNAME", "")  # Channel username (optional)
+# Content Delivery: Direct to User Chat (Log Channel removed for simplicity)
 
 # Performance Configuration
 MAX_CONCURRENT_DOWNLOADS = int(os.environ.get('MAX_CONCURRENT_DOWNLOADS', '5'))

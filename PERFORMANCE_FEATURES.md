@@ -2,14 +2,14 @@
 
 ## Overview
 
-The bot now includes advanced performance features for faster processing and better content management through custom log channels and parallel processing.
+The bot now includes advanced performance features for faster processing and better content management through parallel processing and direct content delivery.
 
 ## 🚀 New Features
 
-### 1. **Custom Log Channel** 📺
-- **Purpose**: Centralized content delivery and storage
-- **Benefits**: Faster processing, better organization, reduced bot load
-- **Configuration**: Set `LOG_CHANNEL` environment variable
+### 1. **Direct Content Delivery** 📱
+- **Purpose**: Content delivered directly to your chat
+- **Benefits**: Simplified setup, no permission issues, immediate access
+- **Configuration**: No additional setup required
 
 ### 2. **Parallel Processing** ⚡
 - **Purpose**: Simultaneous download/upload operations
