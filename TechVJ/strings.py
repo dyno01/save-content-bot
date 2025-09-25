@@ -12,6 +12,8 @@ HELP_TXT = """**🌟 Help Menu**
 • `/cancel` - Cancel ongoing tasks
 • `/security` - Check your security status
 • `/force_logout` - Emergency logout for security
+• `/channel_stats` - Show channel usage statistics
+• `/setup_channel` - Guide for setting up log channel
 
 **📱 Usage:**
 
@@ -40,10 +42,17 @@ https://t.me/c/xxxx/101-120
 • Input validation
 • Activity monitoring
 
+**⚡ Performance Features:**
+• Parallel download/upload processing
+• Custom log channel support
+• Faster batch processing
+• Optimized resource usage
+
 **⚠️ Important:**
 • Maximum batch size: 100 messages
 • Rate limit: 20 requests per 5 minutes
 • Use `/security` to check your status
+• Use `/channel_stats` for performance info
 
 __Note: Space in between doesn't matter in batch ranges__"""
        

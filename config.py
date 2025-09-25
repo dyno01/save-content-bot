@@ -25,6 +25,15 @@ DB_NAME = os.environ.get("DB_NAME", "vjsavecontentbot")
 # If You Want Error Message In Your Personal Message Then Turn It True Else If You Don't Want Then Flase
 ERROR_MESSAGE = os.environ.get('ERROR_MESSAGE', 'True').lower() in ('true', '1', 'yes', 'on')
 
+# Custom Log Channel Configuration
+LOG_CHANNEL = os.environ.get("LOG_CHANNEL", "")  # Channel ID or username for content delivery
+LOG_CHANNEL_USERNAME = os.environ.get("LOG_CHANNEL_USERNAME", "")  # Channel username (optional)
+
+# Performance Configuration
+MAX_CONCURRENT_DOWNLOADS = int(os.environ.get('MAX_CONCURRENT_DOWNLOADS', '5'))
+MAX_CONCURRENT_UPLOADS = int(os.environ.get('MAX_CONCURRENT_UPLOADS', '3'))
+PARALLEL_PROCESSING = os.environ.get('PARALLEL_PROCESSING', 'True').lower() in ('true', '1', 'yes', 'on')
+
 # Validate required environment variables
 required_vars = ['BOT_TOKEN', 'API_ID', 'API_HASH', 'DB_URI']
 missing_vars = [var for var in required_vars if not os.environ.get(var)]
