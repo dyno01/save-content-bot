@@ -36,14 +36,12 @@ https://t.me/c/xxxx/101-120
 
 **🔒 Security Features:**
 • Rate limiting to prevent abuse
-• Session timeout for security
 • Batch size limits
 • Input validation
 • Activity monitoring
 
 **⚠️ Important:**
 • Maximum batch size: 100 messages
-• Session expires after 1 hour of inactivity
 • Rate limit: 20 requests per 5 minutes
 • Use `/security` to check your status
 

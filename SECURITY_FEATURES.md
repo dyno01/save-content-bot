@@ -14,9 +14,9 @@ This bot now includes comprehensive security measures to protect user accounts a
 
 ### 2. **Session Timeout** ⏰
 - **Purpose**: Automatic logout for inactive users
-- **Default**: 1 hour (3600 seconds)
-- **Configurable**: Set `SESSION_TIMEOUT` environment variable
-- **Action**: Forces re-login after timeout
+- **Default**: Disabled (0 seconds)
+- **Configurable**: Set `SESSION_TIMEOUT` environment variable (0 = disabled)
+- **Action**: Forces re-login after timeout (if enabled)
 
 ### 3. **Batch Size Limits** 📊
 - **Purpose**: Prevents server overload and abuse
@@ -78,7 +78,7 @@ Add these to your Render environment variables:
 ```bash
 # Security Configuration
 MAX_BATCH_SIZE=100                    # Maximum messages per batch
-SESSION_TIMEOUT=3600                  # Session timeout in seconds (1 hour)
+SESSION_TIMEOUT=0                     # Session timeout in seconds (0 = disabled)
 RATE_LIMIT_WINDOW=300                 # Rate limit window in seconds (5 minutes)
 MAX_REQUESTS_PER_WINDOW=20            # Max requests per window
 MAX_FILE_SIZE=2097152000              # Maximum file size (2GB)
@@ -185,13 +185,18 @@ Modify environment variables to suit your needs:
 ```bash
 # More restrictive (higher security)
 MAX_BATCH_SIZE=50
-SESSION_TIMEOUT=1800
+SESSION_TIMEOUT=1800  # 30 minutes
 MAX_REQUESTS_PER_WINDOW=10
 
 # Less restrictive (higher usability)
 MAX_BATCH_SIZE=200
-SESSION_TIMEOUT=7200
+SESSION_TIMEOUT=0     # Disabled
 MAX_REQUESTS_PER_WINDOW=50
+
+# Default (balanced)
+MAX_BATCH_SIZE=100
+SESSION_TIMEOUT=0     # Disabled
+MAX_REQUESTS_PER_WINDOW=20
 ```
 
 ### Monitoring
@@ -211,3 +216,4 @@ If you encounter security issues:
 ---
 
 **Remember**: These security features are designed to protect you and the bot. They may occasionally cause minor inconveniences, but they significantly improve overall security and stability. 🔒
+

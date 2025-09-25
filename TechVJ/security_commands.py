@@ -14,22 +14,25 @@ async def security_status(client: Client, message: Message):
     activity = security_manager.user_activity.get(user_id, {})
     suspicious_count = security_manager.suspicious_activity.get(user_id, 0)
     
-    # Calculate session time remaining
-    last_activity = activity.get('last_activity', 0)
-    time_remaining = security_manager.SESSION_TIMEOUT - (time.time() - last_activity)
-    time_remaining = max(0, time_remaining)
-    
-    # Format time remaining
-    hours = int(time_remaining // 3600)
-    minutes = int((time_remaining % 3600) // 60)
-    seconds = int(time_remaining % 60)
-    
-    if hours > 0:
-        time_str = f"{hours}h {minutes}m {seconds}s"
-    elif minutes > 0:
-        time_str = f"{minutes}m {seconds}s"
+    # Calculate session time remaining (if timeout is enabled)
+    if security_manager.SESSION_TIMEOUT > 0:
+        last_activity = activity.get('last_activity', 0)
+        time_remaining = security_manager.SESSION_TIMEOUT - (time.time() - last_activity)
+        time_remaining = max(0, time_remaining)
+        
+        # Format time remaining
+        hours = int(time_remaining // 3600)
+        minutes = int((time_remaining % 3600) // 60)
+        seconds = int(time_remaining % 60)
+        
+        if hours > 0:
+            time_str = f"{hours}h {minutes}m {seconds}s"
+        elif minutes > 0:
+            time_str = f"{minutes}m {seconds}s"
+        else:
+            time_str = f"{seconds}s"
     else:
-        time_str = f"{seconds}s"
+        time_str = "Disabled (No timeout)"
     
     status_text = f"""
 🔒 **Security Status**
@@ -41,7 +44,7 @@ async def security_status(client: Client, message: Message):
 
 **Security Settings:**
 • Max batch size: `{security_manager.MAX_BATCH_SIZE}`
-• Session timeout: `{security_manager.SESSION_TIMEOUT // 3600} hours`
+• Session timeout: `{"Disabled" if security_manager.SESSION_TIMEOUT == 0 else f"{security_manager.SESSION_TIMEOUT // 3600} hours"}`
 • Rate limit: `{security_manager.MAX_REQUESTS_PER_WINDOW} requests per {security_manager.RATE_LIMIT_WINDOW // 60} minutes`
 
 **Your Status:**
@@ -96,3 +99,4 @@ async def force_logout(client: Client, message: Message):
     security_manager.log_security_event(user_id, "FORCE_LOGOUT", "User forced logout")
     
     await message.reply_text("**🔒 All sessions logged out for security. Please /login again.**")
+

@@ -13,7 +13,7 @@ class SecurityManager:
     def __init__(self):
         # Security configurations
         self.MAX_BATCH_SIZE = int(os.environ.get('MAX_BATCH_SIZE', '100'))
-        self.SESSION_TIMEOUT = int(os.environ.get('SESSION_TIMEOUT', '3600'))  # 1 hour
+        self.SESSION_TIMEOUT = int(os.environ.get('SESSION_TIMEOUT', '0'))  # 0 = disabled
         self.RATE_LIMIT_WINDOW = int(os.environ.get('RATE_LIMIT_WINDOW', '300'))  # 5 minutes
         self.MAX_REQUESTS_PER_WINDOW = int(os.environ.get('MAX_REQUESTS_PER_WINDOW', '20'))
         self.MAX_FILE_SIZE = int(os.environ.get('MAX_FILE_SIZE', '2097152000'))  # 2GB
@@ -74,6 +74,10 @@ class SecurityManager:
     
     def is_session_expired(self, user_id: int) -> bool:
         """Check if user session has expired"""
+        # Session timeout is disabled (SESSION_TIMEOUT = 0)
+        if self.SESSION_TIMEOUT == 0:
+            return False
+            
         if user_id not in self.user_activity:
             return True
         
@@ -153,3 +157,4 @@ class SecurityManager:
 
 # Global security manager instance
 security_manager = SecurityManager()
+
