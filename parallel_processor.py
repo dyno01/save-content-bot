@@ -157,42 +157,42 @@ class ParallelProcessor:
                     LOG_CHANNEL, 
                     file_path, 
                     caption=caption,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Video":
                 await client.send_video(
                     LOG_CHANNEL, 
                     file_path, 
                     caption=caption,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Photo":
                 await client.send_photo(
                     LOG_CHANNEL, 
                     file_path, 
                     caption=caption,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Audio":
                 await client.send_audio(
                     LOG_CHANNEL, 
                     file_path, 
                     caption=caption,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Voice":
                 await client.send_voice(
                     LOG_CHANNEL, 
                     file_path, 
                     caption=caption,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Animation":
                 await client.send_animation(
                     LOG_CHANNEL, 
                     file_path, 
                     caption=caption,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Sticker":
                 await client.send_sticker(LOG_CHANNEL, file_path)
@@ -215,7 +215,7 @@ class ParallelProcessor:
                     file_path, 
                     caption=caption,
                     reply_to_message_id=original_message.id,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Video":
                 await client.send_video(
@@ -223,7 +223,7 @@ class ParallelProcessor:
                     file_path, 
                     caption=caption,
                     reply_to_message_id=original_message.id,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Photo":
                 await client.send_photo(
@@ -231,7 +231,7 @@ class ParallelProcessor:
                     file_path, 
                     caption=caption,
                     reply_to_message_id=original_message.id,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Audio":
                 await client.send_audio(
@@ -239,7 +239,7 @@ class ParallelProcessor:
                     file_path, 
                     caption=caption,
                     reply_to_message_id=original_message.id,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Voice":
                 await client.send_voice(
@@ -247,7 +247,7 @@ class ParallelProcessor:
                     file_path, 
                     caption=caption,
                     reply_to_message_id=original_message.id,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Animation":
                 await client.send_animation(
@@ -255,7 +255,7 @@ class ParallelProcessor:
                     file_path, 
                     caption=caption,
                     reply_to_message_id=original_message.id,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
             elif msg_type == "Sticker":
                 await client.send_sticker(
@@ -281,13 +281,13 @@ class ParallelProcessor:
                     text,
                     entities=entities,
                     reply_to_message_id=original_message.id,
-                    parse_mode="html"
+                    parse_mode="HTML"
                 )
                 return
             
             # Send to log channel
             caption = f"📝 **Text Message**\n\n{text}\n\n👤 **Requested by:** {original_message.from_user.mention}"
-            await client.send_message(LOG_CHANNEL, caption, parse_mode="html")
+            await client.send_message(LOG_CHANNEL, caption, parse_mode="HTML")
             
         except Exception as e:
             security_manager.log_security_event(original_message.from_user.id, "TEXT_SEND_ERROR", str(e))

@@ -51,7 +51,7 @@ async def test_channel(client: Client, message: Message):
 This is a test message to verify the log channel is working correctly.
 """
         
-        await client.send_message(LOG_CHANNEL, test_message, parse_mode="html")
+        await client.send_message(LOG_CHANNEL, test_message, parse_mode="HTML")
         await message.reply_text("**✅ Test message sent to log channel successfully!**")
         
     except Exception as e:
