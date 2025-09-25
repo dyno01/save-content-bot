@@ -17,23 +17,46 @@ from pyrogram.errors import (
 )
 from config import API_ID, API_HASH
 from database.db import db
+from security import security_manager
 
 SESSION_STRING_SIZE = 351
 
 @Client.on_message(filters.private & ~filters.forwarded & filters.command(["logout"]))
 async def logout(client, message):
-    user_data = await db.get_session(message.from_user.id)  
+    user_id = message.from_user.id
+    
+    # Security logging
+    security_manager.log_security_event(user_id, "LOGOUT_ATTEMPT", "User initiated logout")
+    
+    user_data = await db.get_session(user_id)  
     if user_data is None:
         return 
-    await db.set_session(message.from_user.id, session=None)  
+    
+    # Clear user activity and session
+    await db.set_session(user_id, session=None)
+    security_manager.user_activity.pop(user_id, None)
+    security_manager.rate_limits.pop(user_id, None)
+    security_manager.suspicious_activity.pop(user_id, None)
+    
+    security_manager.log_security_event(user_id, "LOGOUT_SUCCESS", "User logged out successfully")
     await message.reply("**Logout Successfully** ♦")
 
 @Client.on_message(filters.private & ~filters.forwarded & filters.command(["login"]))
 async def main(bot: Client, message: Message):
-    user_data = await db.get_session(message.from_user.id)
+    user_id = message.from_user.id
+    
+    # Security checks
+    if security_manager.is_rate_limited(user_id):
+        security_manager.log_security_event(user_id, "LOGIN_RATE_LIMIT", "Too many login attempts")
+        return await message.reply("**⚠️ Too many login attempts. Please wait before trying again.**")
+    
+    user_data = await db.get_session(user_id)
     if user_data is not None:
         await message.reply("**Your Are Already Logged In. First /logout Your Old Session. Then Do Login.**")
-        return 
+        return
+    
+    # Log login attempt
+    security_manager.log_security_event(user_id, "LOGIN_ATTEMPT", "User initiated login") 
     user_id = int(message.from_user.id)
     phone_number_msg = await bot.ask(chat_id=user_id, text="<b>Please send your phone number which includes country code</b>\n<b>Example:</b> <code>+13124562345, +9171828181889</code>")
     if phone_number_msg.text=='/cancel':

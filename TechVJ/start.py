@@ -11,6 +11,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 from config import API_ID, API_HASH, ERROR_MESSAGE
 from database.db import db
 from TechVJ.strings import HELP_TXT
+from security import security_manager
 
 class batch_temp(object):
     IS_BATCH = {}
@@ -95,29 +96,81 @@ async def send_cancel(client: Client, message: Message):
 
 @Client.on_message(filters.text & filters.private)
 async def save(client: Client, message: Message):
+    user_id = message.from_user.id
+    
+    # Security checks
+    if security_manager.is_rate_limited(user_id):
+        security_manager.log_security_event(user_id, "RATE_LIMIT", "Too many requests")
+        return await message.reply_text("**⚠️ Rate limit exceeded. Please wait before making more requests.**")
+    
+    # Input validation
+    is_valid, validation_msg = security_manager.validate_input(message.text)
+    if not is_valid:
+        security_manager.track_user_activity(user_id, 'invalid_input')
+        security_manager.log_security_event(user_id, "INVALID_INPUT", validation_msg)
+        return await message.reply_text(f"**❌ {validation_msg}**")
+    
+    # Check for security warnings
+    warning = security_manager.get_security_warning(user_id)
+    if warning:
+        await message.reply_text(f"**{warning}**")
+    
     if "https://t.me/" in message.text:
-        if batch_temp.IS_BATCH.get(message.from_user.id) == False:
+        if batch_temp.IS_BATCH.get(user_id) == False:
             return await message.reply_text("**One Task Is Already Processing. Wait For Complete It. If You Want To Cancel This Task Then Use - /cancel**")
+        
         datas = message.text.split("/")
         temp = datas[-1].replace("?single","").split("-")
-        fromID = int(temp[0].strip())
+        
         try:
-            toID = int(temp[1].strip())
-        except:
-            toID = fromID
-        batch_temp.IS_BATCH[message.from_user.id] = False
+            fromID = int(temp[0].strip())
+            toID = int(temp[1].strip()) if len(temp) > 1 else fromID
+        except ValueError:
+            return await message.reply_text("**❌ Invalid message ID format. Please use numbers only.**")
+        
+        # Batch size validation
+        is_valid_batch, batch_msg = security_manager.validate_batch_size(fromID, toID)
+        if not is_valid_batch:
+            security_manager.track_user_activity(user_id, 'large_batch')
+            security_manager.log_security_event(user_id, "LARGE_BATCH", batch_msg)
+            return await message.reply_text(f"**❌ {batch_msg}**")
+        
+        if "Large batch detected" in batch_msg:
+            await message.reply_text(f"**⚠️ {batch_msg}**")
+        
+        batch_temp.IS_BATCH[user_id] = False
+        security_manager.track_user_activity(user_id, 'batch_request')
         for msgid in range(fromID, toID+1):
-            if batch_temp.IS_BATCH.get(message.from_user.id): break
-            user_data = await db.get_session(message.from_user.id)
+            if batch_temp.IS_BATCH.get(user_id): break
+            
+            # Check session timeout
+            if security_manager.is_session_expired(user_id):
+                security_manager.log_security_event(user_id, "SESSION_TIMEOUT", "Session expired")
+                await message.reply("**⚠️ Your session has expired. Please /login again.**")
+                batch_temp.IS_BATCH[user_id] = True
+                return
+            
+            user_data = await db.get_session(user_id)
             if user_data is None:
                 await message.reply("**For Downloading Restricted Content You Have To /login First.**")
-                batch_temp.IS_BATCH[message.from_user.id] = True
+                batch_temp.IS_BATCH[user_id] = True
                 return
+            
             try:
                 acc = Client("saverestricted", session_string=user_data, api_hash=API_HASH, api_id=API_ID)
                 await acc.connect()
-            except:
-                batch_temp.IS_BATCH[message.from_user.id] = True
+                
+                # Validate session is still active
+                is_valid, validation_msg = await security_manager.validate_session(acc, user_id)
+                if not is_valid:
+                    security_manager.log_security_event(user_id, "INVALID_SESSION", validation_msg)
+                    await acc.disconnect()
+                    batch_temp.IS_BATCH[user_id] = True
+                    return await message.reply("**Your Login Session Expired. So /logout First Then Login Again By - /login**")
+                    
+            except Exception as e:
+                security_manager.log_security_event(user_id, "SESSION_ERROR", str(e))
+                batch_temp.IS_BATCH[user_id] = True
                 return await message.reply("**Your Login Session Expired. So /logout First Then Login Again By - /login**")
             
             # private
@@ -156,9 +209,12 @@ async def save(client: Client, message: Message):
                         if ERROR_MESSAGE == True:
                             await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
 
-            # wait time
+            # wait time with security tracking
             await asyncio.sleep(3)
-        batch_temp.IS_BATCH[message.from_user.id] = True
+            security_manager.track_user_activity(user_id, 'message_processed')
+        
+        batch_temp.IS_BATCH[user_id] = True
+        security_manager.log_security_event(user_id, "BATCH_COMPLETED", f"Processed {toID - fromID + 1} messages")
 
 
 # handle private
