@@ -35,7 +35,6 @@ In your Render service dashboard, go to "Environment" tab and add these variable
 - `API_ID`: Your Telegram API ID (number)
 - `API_HASH`: Your Telegram API Hash (string)
 - `DB_URI`: Your MongoDB connection string
-- `ADMINS`: Your Telegram user ID (number)
 
 ### Optional Variables:
 - `DB_NAME`: Database name (default: `vjsavecontentbot`)
@@ -71,7 +70,6 @@ Add the same environment variables to your background worker as you did for the 
 | `API_ID` | Telegram API ID from my.telegram.org | Yes | `1234567` |
 | `API_HASH` | Telegram API Hash from my.telegram.org | Yes | `abcdef1234567890abcdef1234567890` |
 | `DB_URI` | MongoDB connection string | Yes | `mongodb+srv://user:pass@cluster.mongodb.net/` |
-| `ADMINS` | Your Telegram user ID | Yes | `123456789` |
 | `DB_NAME` | Database name | No | `vjsavecontentbot` |
 | `ERROR_MESSAGE` | Show error messages to users | No | `True` or `False` |
 
@@ -116,7 +114,6 @@ Once deployed, your bot will support these commands:
 - `/login` - Login with your Telegram session
 - `/logout` - Logout from your session
 - `/cancel` - Cancel any ongoing task
-- `/broadcast` - Broadcast message to users (Admin only)
 
 ## Usage
 

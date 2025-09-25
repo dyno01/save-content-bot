@@ -2,7 +2,7 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from security import security_manager
-from config import ADMINS
+# Admin functionality removed
 import time
 
 @Client.on_message(filters.private & filters.command(["security"]))
@@ -54,33 +54,12 @@ async def security_status(client: Client, message: Message):
 **Tips:**
 • Use `/logout` if you suspect unauthorized access
 • Don't share your login session with others
-• Report suspicious activity to admin
+• Use `/force_logout` for emergency security
 """
     
     await message.reply_text(status_text)
 
-@Client.on_message(filters.private & filters.command(["security_reset"]) & filters.user(ADMINS))
-async def reset_security(client: Client, message: Message):
-    """Reset security data for a user (Admin only)"""
-    if not message.reply_to_message:
-        return await message.reply_text("**Reply to a user's message to reset their security data.**")
-    
-    target_user_id = message.reply_to_message.from_user.id
-    
-    # Reset security data
-    security_manager.user_activity.pop(target_user_id, None)
-    security_manager.rate_limits.pop(target_user_id, None)
-    security_manager.suspicious_activity.pop(target_user_id, None)
-    
-    security_manager.log_security_event(target_user_id, "SECURITY_RESET", f"Reset by admin {message.from_user.id}")
-    
-    await message.reply_text(f"**Security data reset for user {target_user_id}**")
-
-@Client.on_message(filters.private & filters.command(["security_logs"]) & filters.user(ADMINS))
-async def security_logs(client: Client, message: Message):
-    """Show recent security logs (Admin only)"""
-    # This is a placeholder - in production you'd read from a log file or database
-    await message.reply_text("**Security logs feature coming soon. Check server logs for now.**")
+# Admin commands removed - no longer needed
 
 @Client.on_message(filters.private & filters.command(["force_logout"]))
 async def force_logout(client: Client, message: Message):

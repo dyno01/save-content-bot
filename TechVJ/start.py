@@ -8,11 +8,10 @@ import pyrogram
 from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserAlreadyParticipant, InviteHashExpired, UsernameNotOccupied
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message 
-from config import API_ID, API_HASH, ERROR_MESSAGE, LOG_CHANNEL, PARALLEL_PROCESSING
+from config import API_ID, API_HASH, ERROR_MESSAGE
 from database.db import db
 from TechVJ.strings import HELP_TXT
 from security import security_manager
-from parallel_processor import parallel_processor
 
 class batch_temp(object):
     IS_BATCH = {}
@@ -89,44 +88,10 @@ async def send_help(client: Client, message: Message):
 # cancel command
 @Client.on_message(filters.command(["cancel"]))
 async def send_cancel(client: Client, message: Message):
-    user_id = message.from_user.id
-    batch_temp.IS_BATCH[user_id] = True
-    
-    # Cancel parallel processing tasks if any
-    await parallel_processor.cancel_user_tasks(user_id)
-    
+    batch_temp.IS_BATCH[message.from_user.id] = True
     await client.send_message(
         chat_id=message.chat.id, 
         text="**Batch Successfully Cancelled.**"
-    )
-
-# debug command
-@Client.on_message(filters.command(["debug"]))
-async def debug_command(client: Client, message: Message):
-    """Debug information for troubleshooting"""
-    user_id = message.from_user.id
-    
-    debug_info = f"""🔍 **Debug Information**
-
-**Configuration:**
-• Parallel Processing: {PARALLEL_PROCESSING}
-• Content Delivery: Direct to User Chat
-• Max Concurrent Downloads: {MAX_CONCURRENT_DOWNLOADS}
-• Max Concurrent Uploads: {MAX_CONCURRENT_UPLOADS}
-
-**Session Status:**
-• User ID: {user_id}
-• Session Valid: {'✅' if await security_manager.is_session_valid(user_id) else '❌'}
-
-**Active Tasks:**
-• Parallel Tasks: {len(parallel_processor.active_tasks.get(user_id, []))}
-
-**Environment:**
-• Python Version: {sys.version.split()[0]}"""
-    
-    await client.send_message(
-        chat_id=message.chat.id, 
-        text=debug_info
     )
 
 @Client.on_message(filters.text & filters.private)
@@ -175,101 +140,81 @@ async def save(client: Client, message: Message):
         
         batch_temp.IS_BATCH[user_id] = False
         security_manager.track_user_activity(user_id, 'batch_request')
-        
-        # Check session timeout
-        if security_manager.is_session_expired(user_id):
-            security_manager.log_security_event(user_id, "SESSION_TIMEOUT", "Session expired")
-            await message.reply("**⚠️ Your session has expired. Please /login again.**")
-            batch_temp.IS_BATCH[user_id] = True
-            return
-        
-        user_data = await db.get_session(user_id)
-        if user_data is None:
-            await message.reply("**For Downloading Restricted Content You Have To /login First.**")
-            batch_temp.IS_BATCH[user_id] = True
-            return
-        
-        try:
-            acc = Client("saverestricted", session_string=user_data, api_hash=API_HASH, api_id=API_ID)
-            await acc.connect()
+        for msgid in range(fromID, toID+1):
+            if batch_temp.IS_BATCH.get(user_id): break
             
-            # Validate session is still active
-            is_valid, validation_msg = await security_manager.validate_session(acc, user_id)
-            if not is_valid:
-                security_manager.log_security_event(user_id, "INVALID_SESSION", validation_msg)
-                await acc.disconnect()
+            # Check session timeout
+            if security_manager.is_session_expired(user_id):
+                security_manager.log_security_event(user_id, "SESSION_TIMEOUT", "Session expired")
+                await message.reply("**⚠️ Your session has expired. Please /login again.**")
+                batch_temp.IS_BATCH[user_id] = True
+                return
+            
+            user_data = await db.get_session(user_id)
+            if user_data is None:
+                await message.reply("**For Downloading Restricted Content You Have To /login First.**")
+                batch_temp.IS_BATCH[user_id] = True
+                return
+            
+            try:
+                acc = Client("saverestricted", session_string=user_data, api_hash=API_HASH, api_id=API_ID)
+                await acc.connect()
+                
+                # Validate session is still active
+                is_valid, validation_msg = await security_manager.validate_session(acc, user_id)
+                if not is_valid:
+                    security_manager.log_security_event(user_id, "INVALID_SESSION", validation_msg)
+                    await acc.disconnect()
+                    batch_temp.IS_BATCH[user_id] = True
+                    return await message.reply("**Your Login Session Expired. So /logout First Then Login Again By - /login**")
+                    
+            except Exception as e:
+                security_manager.log_security_event(user_id, "SESSION_ERROR", str(e))
                 batch_temp.IS_BATCH[user_id] = True
                 return await message.reply("**Your Login Session Expired. So /logout First Then Login Again By - /login**")
-                
-        except Exception as e:
-            security_manager.log_security_event(user_id, "SESSION_ERROR", str(e))
-            batch_temp.IS_BATCH[user_id] = True
-            return await message.reply("**Your Login Session Expired. So /logout First Then Login Again By - /login**")
-        
-        # Determine chat type and ID
-        chat_type = "public"
-        chat_id = datas[3]
-        
-        if "https://t.me/c/" in message.text:
-            chat_type = "private"
-            chat_id = datas[4]
-        elif "https://t.me/b/" in message.text:
-            chat_type = "bot"
-            chat_id = datas[4]
-        
-        # Send processing start message
-        processing_msg = await message.reply(f"**🚀 Processing {toID - fromID + 1} messages...**\n"
-                                           f"**Mode:** {'Parallel' if PARALLEL_PROCESSING else 'Sequential'}\n"
-                                           f"**Target:** Your Chat")
-        
-        try:
-            # Use parallel processing if enabled
-            print(f"DEBUG: Starting batch processing - From: {fromID}, To: {toID}, Chat: {chat_id}")
-            print(f"DEBUG: Parallel processing enabled: {PARALLEL_PROCESSING}")
-            print(f"DEBUG: Sending content directly to user chat")
             
-            if PARALLEL_PROCESSING:
-                results = await parallel_processor.process_batch_parallel(
-                    client, acc, message, fromID, toID, chat_type, chat_id, processing_msg
-                )
+            # private
+            if "https://t.me/c/" in message.text:
+                chatid = int("-100" + datas[4])
+                try:
+                    await handle_private(client, acc, message, chatid, msgid)
+                except Exception as e:
+                    if ERROR_MESSAGE == True:
+                        await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
+    
+            # bot
+            elif "https://t.me/b/" in message.text:
+                username = datas[4]
+                try:
+                    await handle_private(client, acc, message, username, msgid)
+                except Exception as e:
+                    if ERROR_MESSAGE == True:
+                        await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
+            
+            # public
             else:
-                # Fallback to sequential processing
-                results = await process_sequential(client, acc, message, fromID, toID, chat_type, chat_id)
-            
-            print(f"DEBUG: Processing completed - Success: {results['success']}, Failed: {results['failed']}")
-            
-            # Send completion message
-            completion_text = f"""
-**✅ Batch Processing Complete!**
+                username = datas[3]
 
-**📊 Results:**
-• **Total:** {results['total']} messages
-• **Success:** {results['success']} ✅
-• **Failed:** {results['failed']} ❌
-• **Duration:** {results['duration']:.2f} seconds
-• **Speed:** {results['total']/results['duration']:.2f} messages/sec
+                try:
+                    msg = await client.get_messages(username, msgid)
+                except UsernameNotOccupied: 
+                    await client.send_message(message.chat.id, "The username is not occupied by anyone", reply_to_message_id=message.id)
+                    return
+                try:
+                    await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
+                except:
+                    try:    
+                        await handle_private(client, acc, message, username, msgid)               
+                    except Exception as e:
+                        if ERROR_MESSAGE == True:
+                            await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
 
-**🎯 Target:** Your Chat
-**⚡ Mode:** {'Parallel Processing' if PARALLEL_PROCESSING else 'Sequential Processing'}
-"""
-            
-            if results['errors']:
-                completion_text += f"\n\n**❌ Error Details:**\n"
-                for i, error in enumerate(results['errors'][:3]):  # Show first 3 errors with full details
-                    completion_text += f"• **Error {i+1}:** {error}\n"
-                if len(results['errors']) > 3:
-                    completion_text += f"• ... and {len(results['errors']) - 3} more errors"
-            
-            await processing_msg.edit_text(completion_text)
-            
-        except Exception as e:
-            await processing_msg.edit_text(f"**❌ Processing Error:** {str(e)}")
-            if ERROR_MESSAGE:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
-        finally:
-            await acc.disconnect()
-            batch_temp.IS_BATCH[user_id] = True
-            security_manager.log_security_event(user_id, "BATCH_COMPLETED", f"Processed {toID - fromID + 1} messages")
+            # wait time with security tracking
+            await asyncio.sleep(3)
+            security_manager.track_user_activity(user_id, 'message_processed')
+        
+        batch_temp.IS_BATCH[user_id] = True
+        security_manager.log_security_event(user_id, "BATCH_COMPLETED", f"Processed {toID - fromID + 1} messages")
 
 
 # handle private
@@ -431,62 +376,4 @@ def get_message_type(msg: pyrogram.types.messages_and_media.message.Message):
         return "Text"
     except:
         pass
-
-# Sequential processing function (fallback)
-async def process_sequential(client: Client, acc: Client, message: Message, 
-                           from_id: int, to_id: int, chat_type: str, chat_id: str) -> dict:
-    """Sequential processing fallback"""
-    import time
-    results = {
-        'success': 0,
-        'failed': 0,
-        'errors': [],
-        'total': to_id - from_id + 1,
-        'start_time': time.time()
-    }
-    
-    for msgid in range(from_id, to_id + 1):
-        if batch_temp.IS_BATCH.get(message.from_user.id): 
-            break
-            
-        try:
-            if chat_type == "private":
-                chatid = int("-100" + chat_id)
-                await handle_private(client, acc, message, chatid, msgid)
-            elif chat_type == "bot":
-                await handle_private(client, acc, message, chat_id, msgid)
-            else:  # public
-                try:
-                    msg = await client.get_messages(chat_id, msgid)
-                except UsernameNotOccupied: 
-                    results['failed'] += 1
-                    results['errors'].append(f"Username not occupied: {chat_id}")
-                    continue
-                try:
-                    if LOG_CHANNEL:
-                        await client.copy_message(LOG_CHANNEL, msg.chat.id, msg.id)
-                    else:
-                        await client.copy_message(message.chat.id, msg.chat.id, msg.id, reply_to_message_id=message.id)
-                except:
-                    try:    
-                        await handle_private(client, acc, message, chat_id, msgid)               
-                    except Exception as e:
-                        results['failed'] += 1
-                        results['errors'].append(str(e))
-                        continue
-            
-            results['success'] += 1
-            security_manager.track_user_activity(message.from_user.id, 'message_processed')
-            
-        except Exception as e:
-            results['failed'] += 1
-            results['errors'].append(str(e))
-            if ERROR_MESSAGE:
-                await client.send_message(message.chat.id, f"Error: {e}", reply_to_message_id=message.id)
         
-        # Small delay between messages
-        await asyncio.sleep(0.5)
-    
-    results['end_time'] = time.time()
-    results['duration'] = results['end_time'] - results['start_time']
-    return results

@@ -41,7 +41,7 @@ def test_imports():
 def test_config():
     """Test configuration loading"""
     try:
-        from config import BOT_TOKEN, API_ID, API_HASH, DB_URI, ADMINS
+        from config import BOT_TOKEN, API_ID, API_HASH, DB_URI
         print("✓ Configuration loaded successfully")
         
         if not BOT_TOKEN:

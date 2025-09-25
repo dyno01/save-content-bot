@@ -48,7 +48,6 @@ Set these in your Render dashboard:
 | `API_ID` | Telegram API ID from my.telegram.org | ✅ |
 | `API_HASH` | Telegram API Hash from my.telegram.org | ✅ |
 | `DB_URI` | MongoDB connection string | ✅ |
-| `ADMINS` | Your Telegram user ID | ✅ |
 | `DB_NAME` | Database name (optional) | ❌ |
 | `ERROR_MESSAGE` | Show error messages (optional) | ❌ |
 

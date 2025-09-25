@@ -13,7 +13,6 @@
 - `API_HASH` : Your API Hash From [Telegram Website](https://my.telegram.org)
 - `API_ID` : Your API ID From [Telegram Website](https://my.telegram.org)
 - `BOT_TOKEN` : Your Bot Token From [BotFather](https://telegram.me/BotFather)
-- `ADMINS` : Your Admin Id For Broadcasting Message
 - `DB_URI` : Your Mongodb Database Url From [Mongodb](https://mongodb.com) Watch [Video Tutorial](https://youtu.be/DAHRmFdw99o) ( Warning - Give Db uri in deploy server environment variable, don't give in repo )
 - `ERROR_MESSAGE` : Set True Or False, If You Want Error Message Then True Else False.
 
@@ -26,7 +25,6 @@
 - `/login` : Login Your Telegram String Session 
 - `/logout` : Logout Your Session 
 - `/cancel` : Cancel Your Any Ongoing Task
-- `/broadcast` : Broadcast Message To User (Admin Only)
 
 ---
 
